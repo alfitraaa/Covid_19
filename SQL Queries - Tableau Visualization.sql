@@ -1,6 +1,7 @@
 -- 0.
 select SUM(new_cases) as total_cases, SUM(new_deaths) as total_deaths, SUM(total_deaths)/SUM(total_cases)*100 as death_percentage
-from covid_death;
+from covid_death
+where continent not like "";
 
 -- 1.
 select SUM(new_cases) as total_cases, SUM(new_deaths) as total_deaths, SUM(total_deaths)/SUM(total_cases)*100 as death_percentage
