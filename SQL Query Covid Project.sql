@@ -105,7 +105,7 @@ from covid_death
 where location = 'Indonesia'
 order by 1,2;
 
--- Countries with highest infection rate
+-- Countries with highest reported cumulative cases relative to population
 
 select Location, Population, MAX(total_cases) as highest_infection_count, Max((total_cases/NULLIF(population, 0)))*100 as reported_cases_per_population_pct
 from covid_death

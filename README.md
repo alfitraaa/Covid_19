@@ -35,7 +35,7 @@ Minimal reproducible steps:
 - CFR (Case-Fatality Ratio) is descriptive, not an individual's mortality probability.
 - Reported cases are not the same as unique infected people.
 - Vaccination totals represent vaccine doses administered where stated.
-- Aggregate OWID-style location rows (e.g., 'World', 'Europe') are excluded from country rankings using continent presence (`continent IS NOT NULL AND continent <> ''`).
+- Aggregate location rows (for example `World`, continents, and income groups) are excluded from country/territory rankings using continent presence (`continent IS NOT NULL AND continent <> ''`).
 
 ### Tableau status
 - SQL queries for Tableau-style visualization are included.
