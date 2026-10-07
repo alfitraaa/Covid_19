@@ -45,8 +45,8 @@ create table covid_vaccinations (
 	tests_units text,
 	total_vaccinations bigint,
 	people_vaccinated bigint,
-	people_fully_vaccinated int,
-	total_boosters int,
+	people_fully_vaccinated bigint,
+	total_boosters bigint,
 	new_vaccinations int,
 	new_vaccinations_smoothed int,
 	total_vaccinations_per_hundred decimal(5,2),
@@ -75,15 +75,12 @@ create table covid_vaccinations (
 
 -- Load data local infile to the tables
 
-show variables like "local_infile";
-set global local_infile = 1;
-
-load data local infile 'D:/Fariz Files/Data Analyst/SQL Project/covid_vaccinations.csv'
+load data local infile 'covid_vaccinations.csv'
 into table covid_vaccinations
 fields terminated by ','
 ignore 1 rows;
 
-load data local infile 'D:/Fariz Files/Data Analyst/SQL Project/covid_deaths.csv'
+load data local infile 'covid_deaths.csv'
 into table covid_death
 fields terminated by ','
 ignore 1 rows;
@@ -94,36 +91,37 @@ select Location, date, total_cases, new_cases, total_deaths, population
 from covid_death
 order by 1,2;
 
--- Death percentage in Indonesia
--- Indicates the probability of death if infected by covid
+-- reported case-fatality ratio (CFR) in Indonesia
 
-select Location, date, total_cases, total_deaths, (total_deaths/total_cases)*100 as death_percentage
+select Location, date, total_cases, total_deaths, (total_deaths/NULLIF(total_cases, 0))*100 as reported_case_fatality_ratio_pct
 from covid_death
-where location like 'Indonesia'
+where location = 'Indonesia'
 order by 1,2;
 
--- Percentage of the population infected with Covid
+-- reported cumulative cases as a percentage of population
 
-select Location, date, Population, total_cases, (total_cases/population)*100 as percent_population_infected
+select Location, date, Population, total_cases, (total_cases/NULLIF(population, 0))*100 as reported_cases_per_population_pct
 from covid_death
-where location like 'Indonesia'
+where location = 'Indonesia'
 order by 1,2;
 
--- Countries with highest infection rate
+-- Countries with highest reported cumulative cases relative to population
 
-select Location, Population, MAX(total_cases) as highest_infection_count, Max((total_cases/population))*100 as percent_population_infected
+select Location, Population, MAX(total_cases) as highest_infection_count, Max((total_cases/NULLIF(population, 0)))*100 as reported_cases_per_population_pct
 from covid_death
+where continent is not null and continent <> ''
 group by Location, Population
 order by 4 desc;
 
--- Locations or categories with highest total death
+-- Countries with highest reported death count
 
-select Location, max(total_deaths) as total_death
+select Location, max(total_deaths) as highest_reported_death_count
 from covid_death
+where continent is not null and continent <> ''
 group by Location
 order by 2 desc;
 
--- Growth number of population that has been vaccinated
+-- Growth number of cumulative vaccine doses administered
 -- Define temporary table using CTE
 
 with temp_table as (
@@ -132,12 +130,13 @@ with temp_table as (
 		cd.date, 
 		cd.population, 
 		cv.new_vaccinations,
-		sum(new_vaccinations) over (partition by cd.location order by cd.location, cd.date) as total_vaccinations_growth
+		SUM(COALESCE(cv.new_vaccinations, 0)) over (partition by cd.location order by cd.date ROWS UNBOUNDED PRECEDING) as cumulative_vaccine_doses
 	from covid_death as cd
 	join covid_vaccinations as cv
 		on cd.location = cv.location
 		and cd.date = cv.date
+    where cd.continent is not null and cd.continent <> ''
 	order by 2,3
 	)
-select *, (total_vaccinations_growth/population)*100 as vaccination_growth_percentage
+select *, (cumulative_vaccine_doses/NULLIF(population, 0))*100 as doses_per_100_people
 from temp_table;
